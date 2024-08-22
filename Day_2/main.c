@@ -11,8 +11,6 @@
 #define BLUE_T 14
 
 
-int total_sum = 0;
-
 char *read_from_file()
 {
 
@@ -73,6 +71,8 @@ int process_game(char *game)
 {
 
     // printf("game string %s\n", game);
+
+    static int total_sum = 0;
     int game_id = 0;
 
 
@@ -80,8 +80,6 @@ int process_game(char *game)
 
     const int max_color_values[3] = {14, 12, 13}; // brg
 
-
-    int min_required[3] = {0};
 
     sscanf_s(game, "Game %d", &game_id);
     printf("%d\n", game_id);
@@ -93,7 +91,7 @@ int process_game(char *game)
     }
     char *saveptr1;
     // printf("%s\n", game_strs);
-    game_strs = strtok_r(game_strs, ";", &saveptr1);
+    game_strs = strtok_s(game_strs, ";", &saveptr1);
 
 
     bool game_possible = true;
@@ -134,7 +132,7 @@ int process_game(char *game)
             }
         }
 
-        game_strs = strtok_r(NULL, ";", &saveptr1);
+        game_strs = strtok_s(NULL, ";", &saveptr1);
         // break;
     }
 
@@ -146,14 +144,29 @@ int process_game(char *game)
     return total_sum;
 }
 
+
+/*
+when you call strtok it makes an internal thread and when in next loop you call
+strtok it will fail after one interation only thats when in process_game we use
+strtok_r which restarts and previous strtok keeps running
+
+also strncmp wont work if you have whitespaces in data
+
+u can use sscanf_s to get the relevant item from the string which is not a user input
+also i forgot to make sure that total sum was a static in process_game so i did that as well
+
+also strtok_s is a safer version of strtok so using that is ok as well
+
+*/
+
 int main()
 {
     int total = 0;
     char *contents = read_from_file();
     char *game_part;
     // printf("%s\n", contents);
-    trim_whitespace(contents);
-    game_part = strtok(contents, "\n");
+    char *save_game_part;
+    game_part = strtok_s(contents, "\n", &save_game_part);
 
     while (game_part != NULL)
     {
@@ -162,7 +175,7 @@ int main()
         total = process_game(game_part);
 
 
-        game_part = strtok(NULL, "\n");
+        game_part = strtok_s(NULL, "\n", &save_game_part);
     }
 
     printf("total_sum %d\n", total);
