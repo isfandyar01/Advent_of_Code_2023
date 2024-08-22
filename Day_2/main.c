@@ -9,7 +9,7 @@
 #define RED_T 12
 #define GREEN_T 13
 #define BLUE_T 14
-
+int sum_of_power = 0;
 
 char *read_from_file()
 {
@@ -72,9 +72,10 @@ int process_game(char *game)
 
     // printf("game string %s\n", game);
 
+
     static int total_sum = 0;
     int game_id = 0;
-
+    int min_required[3] = {0};
 
     const char *color_set[3] = {"blue", "red", "green"};
 
@@ -109,7 +110,7 @@ int process_game(char *game)
 
             sscanf_s(set_next_set_read_pointer, " %d %s", &color_count, color);
 
-            trim_whitespace(color);
+            // trim_whitespace(color);
             for (size_t color_index = 0; color_index < 3; color_index++)
             {
 
@@ -121,6 +122,15 @@ int process_game(char *game)
                     {
                         game_possible = false;
                     }
+
+                    if (color_count > min_required[color_index])
+                    {
+                        min_required[color_index] = color_count;
+                    }
+                    else
+                    {
+                        min_required[color_index] = min_required[color_index];
+                    }
                 }
             }
 
@@ -128,10 +138,10 @@ int process_game(char *game)
             set_next_set_read_pointer = strchr(set_next_set_read_pointer, ',');
             if (set_next_set_read_pointer != NULL)
             {
-                set_next_set_read_pointer++;
+                set_next_set_read_pointer++; // skip the separating ,
             }
         }
-
+        // Move on tp the next set
         game_strs = strtok_s(NULL, ";", &saveptr1);
         // break;
     }
@@ -141,6 +151,8 @@ int process_game(char *game)
         /* code */ total_sum += game_id;
         // printf("sum of game id %d \n", game_id);
     }
+    sum_of_power += min_required[0] * min_required[1] * min_required[2];
+    printf("sum of power %d\n", sum_of_power);
     return total_sum;
 }
 
