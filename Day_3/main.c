@@ -18,9 +18,12 @@ typedef enum
 
 } ident;
 
-int valid_number[1000] = {0};
+int valid_number[15] = {0};
 int number_index = 0;
-char number_storage[100];
+char number_storage[10];
+
+size_t width = 0;
+size_t height = 0;
 
 char *read_from_file()
 {
@@ -55,12 +58,36 @@ char *read_from_file()
     return buffer;
 }
 
+bool is_symbol_around(int row_index, int column_index, char matrix_array[height][width])
+{
+    if (row_index < 0 || row_index >= height)
+    {
+        return false;
+    }
+    if (column_index < 0 || column_index >= width)
+    {
+        return false;
+    }
+    // search top left from index and check for symbol
+
+    if (isdigit(matrix_array[row_index][column_index]))
+    {
+        return false;
+    }
+
+    if (matrix_array[row_index][column_index] == '.')
+    {
+        return false;
+    }
+
+    return true;
+}
+
 int main()
 {
 
     char *contents = read_from_file();
-    size_t width = 0;
-    size_t height = 0;
+
     for (size_t i = 0; contents[i] != '\0'; i++)
     {
         if (contents[i] == '\n')
@@ -79,8 +106,6 @@ int main()
 
     size_t height_index = 0;
     size_t w_index = 0;
-
-    ident map_enums[height][width];
 
     // memset(map_enums, 0, height * width * sizeof(map_enums[0][0]));
 
@@ -101,34 +126,45 @@ int main()
             // printf("%d", map_enums[height_index][w_index]);
         }
     }
-
+    int start;
+    bool symbol_found = false;
     for (size_t i = 0; i < height; i++)
     {
-        int start = 0;
+        // start = 0;
         size_t number_storage_index = 0;
-        // size_t j = 0;
         for (size_t j = 0; j < width; j++)
         {
-            /* code */
-            if (isdigit(matrix[i][j]))
-            {
-                /* code */
+            symbol_found = false;
 
-                while (j < width && isdigit(matrix[i][j]))
+            if (isdigit(matrix[i][j])) // first check if the number at index i and j is a digit
+            {
+                start = j;
+
+                while (j < width && isdigit(matrix[i][j])) // if it is a digit then keep on looping until condition fails
                 {
-                    // printf("%c", matrix[i][j]); // Print the digit
-                    number_storage[number_storage_index++] = matrix[i][j];
-                    j++;
-                    // number_storage_index++;
+                    number_storage[number_storage_index] = matrix[i][j]; // store each char which is digit into the number storage buffer
+                    j++;                                                 // keep moving the column forward
+                    number_storage_index++;                              // and number storage buffer
                 }
-                number_storage[number_storage_index] = '\0';
-                number_storage_index = 0;
-                valid_number[number_index++] = atoi(number_storage);
-                printf("%d \n", valid_number[number_index - 1]);
+                number_storage[number_storage_index] = '\0'; // now the index j has a non digit char so at we are
+                                                             // out of loop and we null terminate the number storage
+                number_storage_index = 0;                    // we reset index so that we can check for other numbers in a row/line
+                // we convert the numbers to integers and store them in array
+
+                if (is_symbol_around(i, start - 1, matrix) ||     // Left
+                    is_symbol_around(i, j - 1, matrix) ||         // Right
+                    is_symbol_around(i - 1, start, matrix) ||     // Up
+                    is_symbol_around(i + 1, start, matrix) ||     // Down
+                    is_symbol_around(i - 1, start - 1, matrix) || // Top-left
+                    is_symbol_around(i - 1, j - 1, matrix) ||     // Top-right
+                    is_symbol_around(i + 1, start - 1, matrix) || // Bottom-left
+                    is_symbol_around(i + 1, j - 1, matrix))       // Bottom-right
+                {
+                    valid_number[number_index++] = atoi(number_storage);
+                    printf("%d \n", valid_number[number_index - 1]);
+                }
             }
         }
-        // printf("\n");
     }
-
     return 0;
 }
