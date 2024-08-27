@@ -105,12 +105,11 @@ int main()
     for (size_t i = 0; i < height; i++)
     {
         int start = 0;
-
-        size_t j = 0;
-        while (j < width)
+        size_t number_storage_index = 0;
+        // size_t j = 0;
+        for (size_t j = 0; j < width; j++)
         {
-            start = j;
-            size_t number_storage_index = 0;
+            /* code */
             if (isdigit(matrix[i][j]))
             {
                 /* code */
@@ -123,16 +122,13 @@ int main()
                     // number_storage_index++;
                 }
                 number_storage[number_storage_index] = '\0';
+                number_storage_index = 0;
                 valid_number[number_index++] = atoi(number_storage);
                 printf("%d \n", valid_number[number_index - 1]);
             }
-            else
-            {
-                j++;
-            }
-
-            // printf("\n");
         }
+        // printf("\n");
     }
+
     return 0;
 }
