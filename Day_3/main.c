@@ -8,9 +8,9 @@
 
 #define FILENANME "input.txt"
 
-int valid_number[15] = {0};
+int valid_number[6000] = {0};
 int number_index = 0;
-char number_storage[10];
+char number_storage[4];
 
 size_t width = 0;
 size_t height = 0;
@@ -156,13 +156,12 @@ int main()
                 if (symbol_found) // Bottom-right
                 {
                     valid_number[number_index++] = atoi(number_storage);
-                    // printf("%d \n", valid_number[number_index - 1]);
+                    printf("%d \n", valid_number[number_index - 1]);
                     ans += valid_number[number_index - 1];
-                    printf("SUM %d \n", ans);
                 }
             }
         }
     }
-
+    printf("SUM %d \n", ans);
     return 0;
 }
