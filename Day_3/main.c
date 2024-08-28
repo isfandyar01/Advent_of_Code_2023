@@ -8,16 +8,6 @@
 
 #define FILENANME "input.txt"
 
-#define number_max_charc 3
-
-typedef enum
-{
-    Digit,
-    Dot,
-    Symbol,
-
-} ident;
-
 int valid_number[15] = {0};
 int number_index = 0;
 char number_storage[10];
@@ -85,7 +75,7 @@ bool is_symbol_around(int row_index, int column_index, char matrix_array[height]
 
 int main()
 {
-
+    int ans = 0;
     char *contents = read_from_file();
 
     for (size_t i = 0; contents[i] != '\0'; i++)
@@ -128,11 +118,11 @@ int main()
     }
     int start;
     bool symbol_found = false;
-    for (size_t i = 0; i < height; i++)
+    for (int i = 0; i < height; i++)
     {
         // start = 0;
         size_t number_storage_index = 0;
-        for (size_t j = 0; j < width; j++)
+        for (int j = 0; j < width; j++)
         {
             symbol_found = false;
 
@@ -144,27 +134,35 @@ int main()
                 {
                     number_storage[number_storage_index] = matrix[i][j]; // store each char which is digit into the number storage buffer
                     j++;                                                 // keep moving the column forward
-                    number_storage_index++;                              // and number storage buffer
+                    number_storage_index++;
+
+                    if (is_symbol_around(i, start - 1, matrix) ||     // Left
+                        is_symbol_around(i, j, matrix) ||             // Right
+                        is_symbol_around(i - 1, start, matrix) ||     // Up
+                        is_symbol_around(i + 1, start, matrix) ||     // Down
+                        is_symbol_around(i - 1, start - 1, matrix) || // Top-left
+                        is_symbol_around(i - 1, j, matrix) ||         // Top-right
+                        is_symbol_around(i + 1, start - 1, matrix) || // Bottom-left
+                        is_symbol_around(i + 1, j, matrix))           // Bottom-right
+                    {
+                        symbol_found = true;
+                    } // and number storage buffer
                 }
                 number_storage[number_storage_index] = '\0'; // now the index j has a non digit char so at we are
                                                              // out of loop and we null terminate the number storage
                 number_storage_index = 0;                    // we reset index so that we can check for other numbers in a row/line
-                // we convert the numbers to integers and store them in array
+                                                             // we convert the numbers to integers and store them in array
 
-                if (is_symbol_around(i, start - 1, matrix) ||     // Left
-                    is_symbol_around(i, j - 1, matrix) ||         // Right
-                    is_symbol_around(i - 1, start, matrix) ||     // Up
-                    is_symbol_around(i + 1, start, matrix) ||     // Down
-                    is_symbol_around(i - 1, start - 1, matrix) || // Top-left
-                    is_symbol_around(i - 1, j - 1, matrix) ||     // Top-right
-                    is_symbol_around(i + 1, start - 1, matrix) || // Bottom-left
-                    is_symbol_around(i + 1, j - 1, matrix))       // Bottom-right
+                if (symbol_found) // Bottom-right
                 {
                     valid_number[number_index++] = atoi(number_storage);
-                    printf("%d \n", valid_number[number_index - 1]);
+                    // printf("%d \n", valid_number[number_index - 1]);
+                    ans += valid_number[number_index - 1];
+                    printf("SUM %d \n", ans);
                 }
             }
         }
     }
+
     return 0;
 }
