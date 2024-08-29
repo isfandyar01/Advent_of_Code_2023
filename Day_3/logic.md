@@ -1,3 +1,5 @@
+Read the file and make 2d array of its contents so we can search the diagonals 
+
 My approach is to first extract the number in a row and then check if the number is surrounded by a symbol
 if symbol is present then store the number in a valid_number array
 
@@ -15,3 +17,9 @@ So for each digit i have to check 8 directions
 8. bottom right
 
 once symbol is found boolean is set and number is stored in a array
+
+
+For part two 
+
+I have already numbers and I check symbols around number if the symbol around number is * which a gear then 
+I mark or store that number separately but i have to check that gear symbol has two numbers adjacent to it 

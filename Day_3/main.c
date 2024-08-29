@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +12,9 @@
 int valid_number[6000] = {0};
 int number_index = 0;
 char number_storage[4];
+
+int pot_gear_storage[10];
+int pot_gear_arr_index = 0;
 
 size_t width = 0;
 size_t height = 0;
@@ -48,34 +52,107 @@ char *read_from_file()
     return buffer;
 }
 
-bool is_symbol_around(int row_index, int column_index, char matrix_array[height][width])
+void get_num(int row_index, int column_index, int *num1, int *num2, char matrix_array[height][width])
 {
-    if (row_index < 0 || row_index >= height)
-    {
-        return false;
-    }
-    if (column_index < 0 || column_index >= width)
-    {
-        return false;
-    }
-    // search top left from index and check for symbol
+    int row = row_index;
+    int column = column_index;
 
-    if (isdigit(matrix_array[row_index][column_index]))
+    // Define directions to check
+    int directions[8][2] = {
+        {-1, -1}, // Top-left
+        {-1, 0},  // Up
+        {-1, 1},  // Top-right
+        {0, -1},  // Left
+        {0, 1},   // Right
+        {1, -1},  // Bottom-left
+        {1, 0},   // Down
+        {1, 1}    // Bottom-right
+    };
+
+    int found_numbers[2] = {0}; // Store found numbers
+    int count = 0;
+
+    for (int i = 0; i < 8; i++)
     {
-        return false;
+        int new_column = column + directions[i][1]; // Column index
+        int new_row = row + directions[i][0];       // Row index
+
+        // Check if the new coordinates are within bounds
+        if (new_column >= 0 && new_column < width && new_row >= 0 && new_row < height)
+        {
+            // Check if there's a digit at the new position
+            if (isdigit(matrix_array[new_row][new_column]))
+            {
+                // Start extracting the number
+                // Storage for the number
+                int idx = 0;
+
+                // Find the start of the number by moving left
+                int start_column = new_column;
+                while (start_column > 0 && isdigit(matrix_array[new_row][start_column - 1]))
+                {
+                    start_column--; // Move left to find the start of the number
+                }
+
+                // Collect the digits into number_storage
+                while (isdigit(matrix_array[new_row][start_column]))
+                {
+                    number_storage[idx++] = matrix_array[new_row][start_column];
+                    start_column++;
+                }
+                number_storage[idx] = '\0'; // Null-terminate the string
+
+                // Convert the found number to integer
+                int found_number = atoi(number_storage);
+
+                // Check if the number is not already found
+                int is_duplicate = 0;
+                for (int j = 0; j < count; j++)
+                {
+                    if (found_numbers[j] == found_number)
+                    {
+                        is_duplicate = 1;
+                        break;
+                    }
+                }
+
+                // Store the found number if it's not a duplicate
+                if (!is_duplicate)
+                {
+                    if (count < 2)
+                    { // Store only the first two unique numbers
+                        found_numbers[count++] = found_number;
+                    }
+                }
+
+                // Stop if two unique numbers are found
+                if (count == 2)
+                {
+                    break;
+                }
+            }
+        }
     }
 
-    if (matrix_array[row_index][column_index] == '.')
+    // Assign found numbers to the output parameters
+    if (count > 0)
     {
-        return false;
+        *num1 = found_numbers[0];
+        printf("num 1 %d \n", *num1);
     }
-
-    return true;
+    if (count > 1)
+    {
+        *num2 = found_numbers[1];
+        printf("num 2 %d \n", *num2);
+    }
 }
 
 int main()
 {
-    int ans = 0;
+    uint64_t ans = 0;
+    int gear_ratio = 0;
+    int num1 = 0, num2 = 0;
+    bool digit_found = false;
     char *contents = read_from_file();
 
     for (size_t i = 0; contents[i] != '\0'; i++)
@@ -116,52 +193,25 @@ int main()
             // printf("%d", map_enums[height_index][w_index]);
         }
     }
-    int start;
-    bool symbol_found = false;
+
     for (int i = 0; i < height; i++)
     {
-        // start = 0;
-        size_t number_storage_index = 0;
         for (int j = 0; j < width; j++)
         {
-            symbol_found = false;
 
-            if (isdigit(matrix[i][j])) // first check if the number at index i and j is a digit
+            if (matrix[i][j] == '*')
             {
-                start = j;
-
-                while (j < width && isdigit(matrix[i][j])) // if it is a digit then keep on looping until condition fails
+                num1 = 0;
+                num2 = 0;
+                get_num(i, j, &num1, &num2, matrix);
+                if (num1 > 0 && num2 > 0)
                 {
-                    number_storage[number_storage_index] = matrix[i][j]; // store each char which is digit into the number storage buffer
-                    j++;                                                 // keep moving the column forward
-                    number_storage_index++;
-
-                    if (is_symbol_around(i, start - 1, matrix) ||     // Left
-                        is_symbol_around(i, j, matrix) ||             // Right
-                        is_symbol_around(i - 1, start, matrix) ||     // Up
-                        is_symbol_around(i + 1, start, matrix) ||     // Down
-                        is_symbol_around(i - 1, start - 1, matrix) || // Top-left
-                        is_symbol_around(i - 1, j, matrix) ||         // Top-right
-                        is_symbol_around(i + 1, start - 1, matrix) || // Bottom-left
-                        is_symbol_around(i + 1, j, matrix))           // Bottom-right
-                    {
-                        symbol_found = true;
-                    } // and number storage buffer
-                }
-                number_storage[number_storage_index] = '\0'; // now the index j has a non digit char so at we are
-                                                             // out of loop and we null terminate the number storage
-                number_storage_index = 0;                    // we reset index so that we can check for other numbers in a row/line
-                                                             // we convert the numbers to integers and store them in array
-
-                if (symbol_found) // Bottom-right
-                {
-                    valid_number[number_index++] = atoi(number_storage);
-                    printf("%d \n", valid_number[number_index - 1]);
-                    ans += valid_number[number_index - 1];
+                    gear_ratio = num1 * num2;
+                    ans += gear_ratio;
                 }
             }
         }
     }
-    printf("SUM %d \n", ans);
+    printf("ans %llu", ans);
     return 0;
 }
