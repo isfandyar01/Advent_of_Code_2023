@@ -23,3 +23,8 @@ For part two
 
 I have already numbers and I check symbols around number if the symbol around number is * which a gear then 
 I mark or store that number separately but i have to check that gear symbol has two numbers adjacent to it 
+
+
+
+for part two i check for * and if found the i search all possible 8 directions around * for a number 
+once digit of number is found i retrive the number and store in gear structure 

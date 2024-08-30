@@ -1,0 +1,104 @@
+#include <ctype.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define FILENAME "input.txt"
+#define MAX_GEARS 2000
+#define MAX_NUMBER_LENGTH 10
+
+typedef struct {
+    int num1;
+    int num2;
+    int count;
+} gear;
+
+gear Gears[MAX_GEARS] = {0};
+int gear_count = 0;
+
+size_t width = 0;
+size_t height = 0;
+
+char *read_from_file() {
+    // ... (keep your existing function)
+}
+
+int get_full_number(char matrix[height][width], int row, int col) {
+    while (col > 0 && isdigit(matrix[row][col - 1])) {
+        col--;
+    }
+    
+    char number[MAX_NUMBER_LENGTH] = {0};
+    int i = 0;
+    while (col < width && isdigit(matrix[row][col])) {
+        number[i++] = matrix[row][col++];
+    }
+    
+    return atoi(number);
+}
+
+void check_adjacent_numbers(char matrix[height][width], int row, int col) {
+    int numbers[8] = {0};
+    int count = 0;
+
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            if (i == 0 && j == 0) continue;
+            
+            int r = row + i;
+            int c = col + j;
+            
+            if (r >= 0 && r < height && c >= 0 && c < width && isdigit(matrix[r][c])) {
+                int num = get_full_number(matrix, r, c);
+                bool duplicate = false;
+                for (int k = 0; k < count; k++) {
+                    if (numbers[k] == num) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (!duplicate) {
+                    numbers[count++] = num;
+                }
+            }
+        }
+    }
+
+    if (count == 2) {
+        Gears[gear_count].num1 = numbers[0];
+        Gears[gear_count].num2 = numbers[1];
+        Gears[gear_count].count = count;
+        gear_count++;
+    }
+}
+
+int main() {
+    char *contents = read_from_file();
+
+    // ... (keep your existing code for setting up width and height)
+
+    char matrix[height][width];
+
+    // ... (keep your existing code for populating the matrix)
+
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            if (matrix[i][j] == '*') {
+                check_adjacent_numbers(matrix, i, j);
+            }
+        }
+    }
+
+    long long total_gear_ratio = 0;
+    for (int i = 0; i < gear_count; i++) {
+        total_gear_ratio += (long long)Gears[i].num1 * Gears[i].num2;
+    }
+
+    printf("Total gear ratio: %lld\n", total_gear_ratio);
+
+    free(contents);
+    return 0;
+}

@@ -8,8 +8,6 @@
 #include <time.h>
 
 #define FILENANME "input.txt"
-#define MAX_GEARS 2000
-#define MAX_NUMBER_LENGTH 10
 
 typedef struct
 {
@@ -64,62 +62,91 @@ char *read_from_file()
     return buffer;
 }
 
-int get_full_number(char matrix[height][width], int row, int col)
+void get_num(int row_index, int column_index, char matrix_array[height][width])
 {
-    while (col > 0 && isdigit(matrix[row][col - 1]))
-    {
-        col--;
-    }
+    int row = row_index;
+    int column = column_index;
 
-    char number[MAX_NUMBER_LENGTH] = {0};
-    int i = 0;
-    while (col < width && isdigit(matrix[row][col]))
-    {
-        number[i++] = matrix[row][col++];
-    }
+    // Define directions to check
+    int directions[8][2] = {
+        {-1, -1}, // Top-left
+        {-1, 0},  // Up
+        {-1, 1},  // Top-right
+        {0, -1},  // Left
+        {0, 1},   // Right
+        {1, -1},  // Bottom-left
+        {1, 0},   // Down
+        {1, 1}    // Bottom-right
+    };
 
-    return atoi(number);
-}
-
-void check_adjacent_numbers(char matrix[height][width], int row, int col)
-{
-    int numbers[8] = {0};
+    int found_numbers[2] = {0}; // Store found numbers
     int count = 0;
 
-    for (int i = -1; i <= 1; i++)
+    for (int i = 0; i < 8; i++)
     {
-        for (int j = -1; j <= 1; j++)
+        int new_column = column + directions[i][1]; // Column index  vector tranpose maths
+        int new_row = row + directions[i][0];       // Row index
+
+        // Check if the new coordinates are within bounds
+        if (new_column >= 0 && new_column < width && new_row >= 0 && new_row < height && isdigit(matrix_array[new_row][new_column]))
         {
-            if (i == 0 && j == 0)
-                continue;
+            // Check if there's a digit at the new position
 
-            int r = row + i;
-            int c = col + j;
+            // Start extracting the number
+            // Storage for the number
+            int idx = 0;
 
-            if (r >= 0 && r < height && c >= 0 && c < width && isdigit(matrix[r][c]))
+            // Find the start of the number by moving left
+            int start_column = new_column;
+            while (start_column > 0 && isdigit(matrix_array[new_row][start_column - 1]))
             {
-                int num = get_full_number(matrix, r, c);
-                bool duplicate = false;
-                for (int k = 0; k < count; k++)
+                start_column--; // Move left to find the start of the number
+            }
+
+            // Collect the digits into number_storage
+            while (start_column < width && isdigit(matrix_array[new_row][start_column]))
+            {
+                number_storage[idx++] = matrix_array[new_row][start_column];
+                start_column++;
+            }
+            number_storage[idx] = '\0'; // Null-terminate the string
+
+            // Convert the found number to integer
+            int found_number = atoi(number_storage);
+
+            // Check if the number is not already found
+            int is_duplicate = 0;
+            for (int j = 0; j < count; j++)
+            {
+                if (found_numbers[j] == found_number)
                 {
-                    if (numbers[k] == num)
-                    {
-                        duplicate = true;
-                        break;
-                    }
+                    is_duplicate = 1;
+                    break;
                 }
-                if (!duplicate)
-                {
-                    numbers[count++] = num;
+            }
+
+            // Store the found number if it's not a duplicate
+            if (!is_duplicate)
+            {
+                if (count < 2)
+                { // Store only the first two unique numbers
+                    found_numbers[count++] = found_number;
                 }
+            }
+
+            // Stop if two unique numbers are found
+            if (count == 2)
+            {
+                break;
             }
         }
     }
 
+    // Assign found numbers to the output parameters
     if (count == 2)
     {
-        Gears[gear_count].num1 = numbers[0];
-        Gears[gear_count].num2 = numbers[1];
+        Gears[gear_count].num1 = found_numbers[0];
+        Gears[gear_count].num2 = found_numbers[1];
         Gears[gear_count].count = count;
         gear_count++;
     }
@@ -160,7 +187,7 @@ int main()
             w_index++;
         }
     }
-
+    int ans;
     for (int i = 0; i < height; i++)
     {
         for (int j = 0; j < width; j++)
@@ -168,7 +195,8 @@ int main()
 
             if (matrix[i][j] == '*')
             {
-                check_adjacent_numbers(matrix, i, j);
+
+                get_num(i, j, matrix);
             }
         }
     }
