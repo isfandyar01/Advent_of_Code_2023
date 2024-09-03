@@ -8,13 +8,11 @@
 #include <time.h>
 
 #define FILENANME "input.txt"
-#define MAX_NUMBERS 15
+#define MAX_NUMBERS 150
 
 int card_numbers[MAX_NUMBERS] = {0};
 int my_numbers[MAX_NUMBERS] = {0};
 
-int card_number_count = 0;
-int my_number_count = 0;
 
 char *read_from_file()
 {
@@ -49,12 +47,28 @@ char *read_from_file()
     return buffer;
 }
 
+//Comparison function
+int compare(const void *a, const void *b)
+{
+    return (*(int *)a - *(int *)b);
+}
+
 void process_cards(char *token)
 {
+
+    int card_number_count = 0;
+    int my_number_count = 0;
     char *savepte = NULL;
     char *extract_card = NULL;
     //  Get a pointer to the first occurrence of a character in a string:
     char *cards_numbers = strchr(token, ':');
+
+    if (cards_numbers != NULL)
+    {
+        cards_numbers++; // Move past ':'
+    }
+
+
     char *my_number_set = strchr(token, '|');
 
 
@@ -62,23 +76,76 @@ void process_cards(char *token)
     {
         my_number_set++; // move past "|"
     }
+    //start of demlimiter logic
 
-    if (cards_numbers != NULL)
-    {
-        cards_numbers++; // Move past ':'
-    }
+    // Start of delimiter logic
     extract_card = strtok_s(cards_numbers, "|", &savepte);
 
-    while (extract_card != NULL)
+    char *save_num_ptr = NULL;
+    char *card_num_str = strtok_s(extract_card, " ", &save_num_ptr);
+
+    while (card_num_str != NULL)
     {
-        card_numbers[++card_number_count] = strtol(extract_card, NULL, 10);
-        extract_card = strtok_s(NULL, "|", &savepte);
+        card_numbers[card_number_count] = strtol(card_num_str, NULL, 10);
+        card_number_count++;
+        card_num_str = strtok_s(NULL, " ", &save_num_ptr);
     }
 
 
-    printf("%s\n", extract_card);
+    // extracting my number set
 
-    printf("%s\n", my_number_set);
+
+    char *my_num_save_ptr = NULL;
+    char *my_num_str = strtok_s(my_number_set, " ", &my_num_save_ptr);
+    while (my_num_str != NULL)
+    {
+        my_numbers[my_number_count] = strtol(my_num_str, NULL, 10);
+        my_number_count++;
+        my_num_str = strtok_s(NULL, " ", &my_num_save_ptr);
+    }
+
+
+    // printf("Extracted card numbers:\n");
+
+    qsort(card_numbers, card_number_count, sizeof(int), compare);
+    // for (int i = 0; i < card_number_count; i++)
+    // {
+    //     printf("%d ", card_numbers[i]);
+    // }
+
+    // printf("\n");
+    qsort(my_numbers, my_number_count, sizeof(int), compare);
+
+    // printf("Extracted my numbers:\n");
+    // for (int i = 0; i < my_number_count; i++)
+    // {
+    //     printf("%d ", my_numbers[i]);
+    // }
+
+    // printf("\n");
+    // printf("%s\n", my_number_set);
+    int matches = 0;
+
+    for (size_t i = 0; i < my_number_count; i++)
+    {
+        for (size_t j = 0; j < card_number_count; j++)
+        {
+            if (my_numbers[i] == card_numbers[j])
+            {
+                matches++;
+                break;
+            }
+        }
+    }
+
+    int score = 0;
+    if (matches > 0)
+    {
+        score = 1 << (matches - 1); // 1 * 2^(matches-1)
+    }
+    static int sum_score = 0;
+    sum_score += score;
+    printf("score == %d\n", sum_score);
 }
 
 
