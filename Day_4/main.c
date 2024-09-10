@@ -9,9 +9,20 @@
 
 #define FILENANME "input.txt"
 #define MAX_NUMBERS 150
-
+#define MAX_CARDS 220
 int card_numbers[MAX_NUMBERS] = {0};
 int my_numbers[MAX_NUMBERS] = {0};
+
+int copies_cards[6] = {1};
+
+typedef struct
+{
+    int score;
+    int instance;
+} card_info;
+
+card_info cards[MAX_CARDS] = {0};
+int card_idx = 0;
 
 
 char *read_from_file()
@@ -55,7 +66,7 @@ int compare(const void *a, const void *b)
 
 void process_cards(char *token)
 {
-
+    static int card_number = 0;
     int card_number_count = 0;
     int my_number_count = 0;
     char *savepte = NULL;
@@ -138,19 +149,44 @@ void process_cards(char *token)
         }
     }
 
-    int score = 0;
-    if (matches > 0)
-    {
-        score = 1 << (matches - 1); // 1 * 2^(matches-1)
-    }
-    static int sum_score = 0;
-    sum_score += score;
-    printf("score == %d\n", sum_score);
+    // int scores = 0;
+    // if (matches > 0)
+    // {
+    //     score = 1 << (matches - 1); // 1 * 2^(matches-1)
+    // }
+
+    cards[card_idx].instance = 1;
+    cards[card_idx].score = matches;
+    card_idx++;
 }
 
 
+int sum_instances()
+{
+    for (int i = 0; i < MAX_CARDS; i++)
+    {
+        int current_instances = cards[i].instance; // How many instances of this card exist
+        int score = cards[i].score;                // How many subsequent cards it can win
+
+        // Use the instances of this card to increase instances of next cards based on the score
+        for (int j = i + 1; j < MAX_CARDS && score > 0; j++)
+        {
+            cards[j].instance += current_instances; // Each instance of this card affects the next cards
+            score--;                                // Decrease the score as we propagate to the next cards
+        }
+    }
+
+    int sum = 0;
+    for (int i = 0; i < MAX_CARDS; i++)
+    {
+        sum += cards[i].instance;
+    }
+    printf("instance == %d\n", sum);
+    return sum;
+}
 int main()
 {
+
 
     char *contents = read_from_file();
 
@@ -164,6 +200,6 @@ int main()
         token = strtok_s(NULL, "\n", &saveptr);
     }
 
-
+    sum_instances();
     return 0;
 }
