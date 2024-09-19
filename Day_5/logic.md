@@ -1,35 +1,51 @@
-First i break the file contents into line by line
-then i get pointer to ":" in each line and move past it once
-then i retrive all the numbers 
+this was the hardest problem so far
 
-now i have to make set of numbers first before "|" and then after "|" and then i can perform
-intersection on sets and see which matches and proceed further
+i have multiple issue 
 
+first i stored the seed into array
 
-```
-41 48 83 86 17 | 83 86  6 31 17  9 48 53
- 13 32 20 16 61 | 61 30 68 82 17 32 24 19
-  1 21 53 59 44 | 69 82 63 72 16 21 14  1
- 41 92 73 84 69 | 59 84 76 51 58  5 54 83
- 87 83 26 28 32 | 88 30 70 12 93 22 82 36
- 31 18 13 56 72 | 74 77 10 23 35 67 36 11
-```
+then i process maps into structs
 
-i have following set of number 
+but issue is that for each map there are number of entries e.g
+seed-to-soil map:
+50 98 2
+52 50 48
 
-i want to make array of numbers before "|" and after the "|"
+has two entries 
 
-what i am thinking logicaly is to use strtok to break the string at | 
-and then use strol to get the numbers in string and store them in array
-and again use original string and use strchr to get pointer to | and 
-then simply store the numbers in array 
+so what i did was make a 2d array of struct 
+
+row represent it each map and column represent entries of map
 
 
-For part two what i did is record the score of each card and its original instance into 
-structure array and then simply increase instances of subsequent cards based on scores
+typedef struct
+{
+    uint64_t dest;
+    uint64_t source;
+    uint64_t range;
 
-what is should to is to increament instance of next card 
-e.g if card 1 has 4 score this mean that next 4 cards instance is increased by one
-then we check instance of card two and if it has e.g score of 2 then that mean instance of card 3 and 4 will be increased by one since score is 2 
+} map;
 
-algorithm you've described is a variation of cascading propagation or cascading effect.
+typedef struct
+{
+    map *maps;
+    int number_of_entries;
+} map_list;
+
+
+map_list all_maps[MAX_MAPS];
+
+there can max 7 maps and for each map there can be mulitple entries so coulmns are not defined in the 2d array
+
+
+row represents the maps soil fertilizer water etc and they are total 7 in numbers
+
+while column of struct array represent map data 
+
+
+so basically am creating a list like this
+   col1      col 2
+{[50 98 2],[52 50 48]} map row 1
+
+
+number of entries tells me how many columns i need to process 

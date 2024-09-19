@@ -20,11 +20,8 @@ gear Gears[2000] = {0};
 int gear_count = 0;
 
 int valid_number[6000] = {0};
-int number_index = 0;
-char number_storage[4];
 
-int pot_gear_storage[10];
-int pot_gear_arr_index = 0;
+char number_storage[4];
 
 size_t width = 0;
 size_t height = 0;

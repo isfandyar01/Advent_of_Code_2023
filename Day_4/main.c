@@ -10,10 +10,10 @@
 #define FILENANME "input.txt"
 #define MAX_NUMBERS 150
 #define MAX_CARDS 220
+
 int card_numbers[MAX_NUMBERS] = {0};
 int my_numbers[MAX_NUMBERS] = {0};
 
-int copies_cards[6] = {1};
 
 typedef struct
 {
@@ -172,6 +172,7 @@ int sum_instances()
         for (int j = i + 1; j < MAX_CARDS && score > 0; j++)
         {
             cards[j].instance += current_instances; // Each instance of this card affects the next cards
+                                                    // Your copy of card 2 also wins one copy each of cards 3 and 4.
             score--;                                // Decrease the score as we propagate to the next cards
         }
     }
