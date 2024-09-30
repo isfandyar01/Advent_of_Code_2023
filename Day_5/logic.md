@@ -49,3 +49,30 @@ so basically am creating a list like this
 
 
 number of entries tells me how many columns i need to process 
+
+
+## PART TWO
+
+k so i think i can solve this problem like this
+
+I have made a struct in C which contains 
+
+seed_start
+seed_range
+
+i can use them to calculate a range 
+
+seed_start=seed_start;
+seed_end = seed_start+seed_range-1;
+
+then i can use map to find out whether seed start and end intersect with map 
+
+for that i need to have maximum of seed_start and map_start
+stored in overlap_start
+and minimum of seed_end and map_start+map_range
+stored in overlap end
+
+if overlap start is less than overlap end then it means that range is over lapping
+and i can transform that range according to mapping algo
+
+and if the range is not overlapping i.e overlap_start is greater than seed start and overlap_end is less than seed_end than that range is stored as it is in final_map and once done i can simple pick first index of final_map after sorting it out using qsort for minimum

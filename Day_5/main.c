@@ -9,9 +9,12 @@
 
 #define FILENANME "input.txt"
 
-#define MAX_SEEDS 20
+#define MAX_SEEDS 4
 #define MAX_MAPS 7
 
+
+#define MIN_UINT64(a, b) ((a) < (b) ? (a) : (b))
+#define MAX_UINT64(a, b) ((a) > (b) ? (a) : (b))
 
 uint64_t seed[MAX_SEEDS] = {0};
 int seed_count = 0;
@@ -30,11 +33,28 @@ char *mapNames[] = {"seed-to-soil map:\n",
 
 typedef struct
 {
+    uint64_t range_start;
+    uint64_t range_end;
+} final_location_ranges;
+
+final_location_ranges final_ranges[MAX_MAPS];
+
+typedef struct
+{
     uint64_t dest;
     uint64_t source;
     uint64_t range;
 
 } map;
+
+
+typedef struct
+{
+    uint64_t start_range;
+    uint64_t end_range;
+
+} seeds;
+
 
 typedef struct
 {
@@ -43,6 +63,8 @@ typedef struct
 } map_list;
 
 map_list all_maps[MAX_MAPS];
+
+seeds seed_list[MAX_SEEDS / 2];
 
 int map_entry_index = 0;
 
@@ -97,6 +119,12 @@ void read_seeds()
     {
         seed[seed_count++] = strtoll(extract_seeds, NULL, 10);
         extract_seeds = strtok_s(NULL, " ", &saveptr);
+    }
+
+    for (int i = 0; i < MAX_SEEDS; i += 2)
+    {
+        seed_list[i / 2].start_range = seed[i];
+        seed_list[i / 2].end_range = seed[i + 1];
     }
 }
 
@@ -222,6 +250,35 @@ void process_maps()
     }
 }
 
+void process_ranges()
+{
+    for (int i = 0; i < MAX_SEEDS / 2; i++)
+    {
+
+        uint64_t current_start = seed_list[i].start_range;
+        uint64_t current_end = current_start + seed_list[i].end_range - 1;
+
+        for (int j = 0; j < MAX_MAPS; j++)
+        {
+            int number_entries = all_maps[j].number_of_entries;
+            for (int k = 0; k < number_entries; k++)
+            {
+                uint64_t dest = all_maps[j].maps[k].dest;
+                uint64_t src_start = all_maps[j].maps[k].source;
+                uint64_t rang = all_maps[j].maps[k].range;
+
+                uint64_t overlap_start = MAX_UINT64(current_start, src_start);
+                uint64_t overlap_end = MIN_UINT64(current_end, src_start + rang);
+                if (overlap_start < overlap_end)
+                {
+                    final_ranges[j].range_start = overlap_start - src_start + dest;
+                    final_ranges[j].range_end = overlap_end - src_start + dest;
+                }
+            }
+        }
+        // final_location[i] = current_start;
+    }
+}
 
 //Comparison function
 // Comparison function for qsort
@@ -240,7 +297,8 @@ int main()
 
     read_seeds();
     read_maps(); /* code */
-    process_maps();
+    // process_maps();
+    process_ranges();
     qsort(final_location, MAX_SEEDS, sizeof(uint64_t), compare);
 
     printf("minium location %lld", final_location[0]);
