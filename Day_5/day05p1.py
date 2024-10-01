@@ -1,33 +1,42 @@
 # Read from a file instead of stdin
 with open("input.txt", "r") as file:
-    seeds, *blocks = file.read().split("\n\n")  # Split file content by double newline
+    inputs, *blocks = file.read().split("\n\n")  # Split file content by double newline
 
-# Convert seeds to a list of integers
-seeds = list(map(int, seeds.split(":")[1].split()))
 
-# Process each block (map)
+inputs = list(map(int, inputs.split(":")[1].split()))
+
+seeds = []
+
+for i in range(0, len(inputs), 2):
+    seeds.append((inputs[i], inputs[i] + inputs[i + 1]))
+
+
+# print(blocks)
+
 for block in blocks:
     ranges = []
-
-    # Read and parse the map ranges from the block (ignoring the first line)
     for line in block.splitlines()[1:]:
-        ranges.append(list(map(int, line.split())))  # Convert each line into a list of integers
-
-    new = []  # Store updated seed mappings
-    print(f"\nProcessing block:\n{block.strip()}\n")
-    for x in seeds:
-        original_seed = x
+        ranges.append(list(map(int, line.split())))
+    print(ranges)
+    new = []
+    while len(seeds) > 0:
+        s, e = seeds.pop()
+        # print(s)
+        # print(e)
         for a, b, c in ranges:
-            if b <= x < b + c:  # Check if seed 'x' is within the range 'b' to 'b + c'
-                new.append(x - b + a)  # Map seed 'x' to the new value
-                print(f"Seed {original_seed} mapped to {x - b + a} (range {b}-{b+c-1})")
+            os = max(s, b)
+            oe = min(e, b + c)
+            # print("os",os)
+            # print("oe",oe)
+            if os < oe:
+                new.append((os - b + a, oe - b + a))
+                if os > s:
+                    seeds.append((s, os))
+                if e > oe:
+                    seeds.append((oe, e))
                 break
         else:
-            new.append(x)  # If no match, keep the seed value unchanged
-            print(f"Seed {original_seed} remains {x} (no match)")
+            new.append((s, e))
+    seeds = new
 
-    seeds = new  # Update seeds to the newly mapped values
-    print(f"Updated seeds after block: {seeds}\n")
-
-# Output the smallest mapped seed value
-print(f"\nFinal minimum location: {min(seeds)}")
+# print((seeds))

@@ -37,7 +37,7 @@ typedef struct
     uint64_t range_end;
 } final_location_ranges;
 
-final_location_ranges final_ranges[MAX_MAPS];
+final_location_ranges final_ranges[MAX_SEEDS * MAX_MAPS]; // Array to store final ranges
 
 typedef struct
 {
@@ -66,6 +66,7 @@ map_list all_maps[MAX_MAPS];
 
 seeds seed_list[MAX_SEEDS / 2];
 
+int final_ranges_count = 0;
 int map_entry_index = 0;
 
 char *read_from_file()
@@ -252,6 +253,8 @@ void process_maps()
 
 void process_ranges()
 {
+    uint64_t rag_start = 0;
+    uint64_t rag_end = 0;
     for (int i = 0; i < MAX_SEEDS / 2; i++)
     {
 
@@ -268,18 +271,41 @@ void process_ranges()
                 uint64_t rang = all_maps[j].maps[k].range;
 
                 uint64_t overlap_start = MAX_UINT64(current_start, src_start);
-                uint64_t overlap_end = MIN_UINT64(current_end, src_start + rang);
+                uint64_t overlap_end = MIN_UINT64(current_end, (src_start + rang - 1));
                 if (overlap_start < overlap_end)
+                { // Overlap exists
+                    // Apply the mapping for the overlapping range
+                    rag_start = overlap_start - src_start + dest;
+                    rag_end = overlap_end - src_start + dest;
+
+
+                    // Handle non-overlapping parts before the overlap
+                    if (overlap_start > current_start)
+                    {
+                        rag_start = current_start;
+                        rag_end = overlap_start - 1;
+                    }
+
+                    // Handle non-overlapping parts after the overlap
+                    if (current_end > overlap_end)
+                    {
+                        rag_start = overlap_end + 1;
+                        rag_end = current_end;
+                    }
+
+                    // Break out after processing this overlap
+                }
+                else
                 {
-                    final_ranges[j].range_start = overlap_start - src_start + dest;
-                    final_ranges[j].range_end = overlap_end - src_start + dest;
+                    rag_start = current_start;
+                    rag_end = current_end;
                 }
             }
+            final_ranges[j].range_start = rag_start;
+            final_ranges[j].range_end = rag_end;
         }
-        // final_location[i] = current_start;
     }
 }
-
 //Comparison function
 // Comparison function for qsort
 int compare(const void *a, const void *b)
