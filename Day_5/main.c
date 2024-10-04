@@ -9,7 +9,7 @@
 
 #define FILENANME "input.txt"
 
-#define MAX_SEEDS 20
+#define MAX_SEEDS 4
 #define INITIAL_NUM_RANGES 20
 #define MAX_MAPS 7
 

@@ -135,3 +135,82 @@ Ranges are split when they partially overlap with a mapping.
 
 The switching of arrays and the mapped flag work together to efficiently process all ranges through all maps, handling transformations and splits as needed.
 Does this explanation help clarify these aspects of the code? Let me know if you'd like me to elaborate on any part further.
+
+
+## DOUBLE BUFFERING TECHNIQUE:
+
+Certainly. Let's dive deeper into the double buffering technique and when to switch between buffers.
+Double Buffering Explained:
+Double buffering is a technique where two buffers (in our case, arrays) are used to hold data during processing. It's commonly used in graphics programming, audio processing, and other scenarios where you need to update a large set of data while still having access to the original data.
+In our context:
+
+Buffer A: Holds the current set of ranges
+Buffer B: Will hold the processed ranges
+
+The key idea is that we read from one buffer and write to the other, then swap their roles.
+Double Buffering ProcessClick to open diagram
+Detailed Process:
+
+Initial State:
+
+Buffer A contains the initial ranges
+Buffer B is empty
+
+
+Processing Map 1:
+
+Read ranges from Buffer A
+Process each range according to Map 1's rules
+Write resulting ranges to Buffer B
+After processing all ranges, switch: now consider B as the "current" buffer
+
+
+Processing Map 2:
+
+Read ranges from Buffer B (previous output)
+Process each range according to Map 2's rules
+Write resulting ranges to Buffer A
+After processing, switch: now A is the "current" buffer again
+
+
+Continue this pattern for all subsequent maps
+
+When to Switch Buffers:
+The key point is when to switch buffers. You switch after completely processing all ranges for a given map. Here's the logic:
+
+Start processing a map
+Read all ranges from the current buffer
+Write all processed ranges to the other buffer
+After all ranges are processed for this map, switch buffers
+
+In code, this looks like:
+cCopyint current = 0;
+for (int map_index = 0; map_index < MAX_MAPS; map_index++) {
+    int next = 1 - current;
+    
+    // Process all ranges for this map
+    for (int i = 0; i < current_count; i++) {
+        // Read from ranges[current]
+        // Write results to ranges[next]
+    }
+    
+    // Switch buffers after processing all ranges for this map
+    current = next;
+}
+Benefits of Double Buffering:
+
+Efficiency: Avoids copying all data back to a single array after each map processing step.
+Clarity: Keeps the original data intact while working on the new set.
+Parallelism potential: In more advanced implementations, you could potentially read and write in parallel.
+
+Drawbacks:
+
+Memory usage: Requires twice the memory compared to a single buffer.
+Complexity: Can be more difficult to understand at first glance.
+
+In our specific problem, double buffering is particularly useful because each map can potentially transform all ranges. By using two buffers, we ensure that we're always reading from the result of the previous map's processing, without needing to do a full copy operation between each map.
+Does this more detailed explanation help clarify the double buffering technique and when to switch buffers? Let me know if you have any more questions or if you'd like to see how this compares to other approaches!
+
+
+
+![alt text](mermaid-diagram-2024-10-04-195802.png)
