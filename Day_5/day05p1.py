@@ -17,7 +17,7 @@ for block in blocks:
     ranges = []
     for line in block.splitlines()[1:]:
         ranges.append(list(map(int, line.split())))
-    print(ranges)
+    # print(ranges)
     new = []
     while len(seeds) > 0:
         s, e = seeds.pop()
@@ -28,15 +28,21 @@ for block in blocks:
             oe = min(e, b + c)
             # print("os",os)
             # print("oe",oe)
+            # print("b",b)
+            # print("a",a)
             if os < oe:
                 new.append((os - b + a, oe - b + a))
+                print(new)
                 if os > s:
                     seeds.append((s, os))
+                    # print(seeds)
                 if e > oe:
                     seeds.append((oe, e))
+                    # print(seeds)
                 break
         else:
             new.append((s, e))
     seeds = new
 
-# print((seeds))
+
+print((new))
