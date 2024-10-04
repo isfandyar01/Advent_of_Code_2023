@@ -9,7 +9,8 @@
 
 #define FILENANME "input.txt"
 
-#define MAX_SEEDS 2
+#define MAX_SEEDS 20
+#define INITIAL_NUM_RANGES 20
 #define MAX_MAPS 7
 
 
@@ -33,14 +34,6 @@ char *mapNames[] = {"seed-to-soil map:\n",
 
 typedef struct
 {
-    uint64_t range_start;
-    uint64_t range_end;
-} final_location_ranges;
-
-final_location_ranges final_ranges[MAX_SEEDS * MAX_MAPS]; // Array to store final ranges
-
-typedef struct
-{
     uint64_t dest;
     uint64_t source;
     uint64_t range;
@@ -53,7 +46,7 @@ typedef struct
     uint64_t start_range;
     uint64_t end_range;
 
-} seeds;
+} Seed_Ranges;
 
 
 typedef struct
@@ -64,69 +57,13 @@ typedef struct
 
 map_list all_maps[MAX_MAPS];
 
-seeds seed_list[MAX_SEEDS / 2];
 
-seeds new_list[20];
+Seed_Ranges final_ranges[MAX_SEEDS * MAX_MAPS]; // Array to store final ranges
+
+
 int new_seed_list_index = 0;
 int final_ranges_count = 0;
 int map_entry_index = 0;
-
-
-// Structure to represent a dynamic array LIFO (stack)
-typedef struct
-{
-    seeds *data;  // Array to hold the structs
-    int capacity; // Maximum number of elements the array can hold
-    int top;      // Index of the top element (-1 if empty)
-} LIFO;
-
-
-LIFO *init_lifo(int initial_capacity)
-{
-    LIFO *lifo = (LIFO *)malloc(sizeof(LIFO));
-    lifo->data = (seeds *)malloc(initial_capacity * sizeof(seeds));
-    lifo->capacity = initial_capacity;
-    lifo->top = -1; // Initially empty
-    return lifo;
-}
-
-
-void push(LIFO *lifo, seeds value)
-{
-    if (lifo->top == lifo->capacity - 1)
-    {
-        // Resize the array if it is full
-        lifo->capacity *= 2;
-        lifo->data = (seeds *)realloc(lifo->data, lifo->capacity * sizeof(seeds));
-    }
-    lifo->data[++lifo->top] = value; // Increment top and add value
-}
-
-
-// Function to pop a final_location_ranges struct from the LIFO stack
-seeds pop(LIFO *lifo)
-{
-    if (lifo->top == -1)
-    {
-        printf("Stack underflow!\n");
-        exit(EXIT_FAILURE);
-    }
-    return lifo->data[lifo->top--]; // Return value and decrement top
-}
-
-
-// Function to check if the LIFO stack is empty
-int is_empty(LIFO *lifo)
-{
-    return lifo->top == -1;
-}
-
-// Free the memory used by the LIFO stack
-void free_lifo(LIFO *lifo)
-{
-    free(lifo->data);
-    free(lifo);
-}
 
 
 char *read_from_file()
@@ -180,12 +117,6 @@ void read_seeds()
     {
         seed[seed_count++] = strtoll(extract_seeds, NULL, 10);
         extract_seeds = strtok_s(NULL, " ", &saveptr);
-    }
-
-    for (int i = 0; i < MAX_SEEDS; i += 2)
-    {
-        seed_list[i / 2].start_range = seed[i];
-        seed_list[i / 2].end_range = seed[i + 1] + seed_list[i / 2].start_range;
     }
 }
 
@@ -313,65 +244,92 @@ void process_maps()
 
 void process_ranges()
 {
-    LIFO *lifo = init_lifo(250);
-    uint64_t rag_start = 0;
-    uint64_t rag_end = 0;
+    int current_count = 0;
+    int new_count = 0;
+    Seed_Ranges ranges[2][MAX_SEEDS * MAX_MAPS];
+    int current = 0; // Index to track which array is current
 
-    for (int z = 0; z < MAX_SEEDS / 2; z++)
+    // Initialize first array with seed ranges
+    for (int i = 0; i < MAX_SEEDS; i += 2)
     {
-        push(lifo, seed_list[z]);
+        ranges[0][current_count].start_range = seed[i];
+        ranges[0][current_count].end_range = seed[i] + seed[i + 1] - 1;
+        current_count++;
     }
 
-
-    while (!is_empty(lifo))
+    // Process each map
+    for (int map_index = 0; map_index < MAX_MAPS; map_index++)
     {
+        int next = 1 - current; // Index of the array to fill
+        new_count = 0;
 
-        uint64_t current_start = seed_list[i].start_range;
-        uint64_t current_end = current_start + seed_list[i].end_range;
-        rag_start = current_start;
-        rag_end = current_end;
-
-        for (int j = 0; j < MAX_MAPS; j++)
+        // Process each range
+        for (int i = 0; i < current_count; i++)
         {
-            int number_entries = all_maps[j].number_of_entries;
-            for (int k = 0; k < number_entries; k++)
+            Seed_Ranges r = ranges[current][i];
+            bool mapped = false;
+
+            // Check against each mapping in the current map
+            for (int j = 0; j < all_maps[map_index].number_of_entries; j++)
             {
-                uint64_t dest = all_maps[j].maps[k].dest;
-                uint64_t src_start = all_maps[j].maps[k].source;
-                uint64_t rang = all_maps[j].maps[k].range;
+                uint64_t dest = all_maps[map_index].maps[j].dest;
+                uint64_t src = all_maps[map_index].maps[j].source;
+                uint64_t range_length = all_maps[map_index].maps[j].range;
 
-                uint64_t overlap_start = MAX_UINT64(current_start, src_start);
-                uint64_t overlap_end = MIN_UINT64(current_end, (src_start + rang));
-                if (overlap_start < overlap_end)
-                { // Overlap exists
-                    // Apply the mapping for the overlapping range
-                    current_start = overlap_start - src_start + dest;
-                    current_end = overlap_end - src_start + dest;
+                uint64_t overlap_start = MAX_UINT64(r.start_range, src);
+                uint64_t overlap_end = MIN_UINT64(r.end_range, src + range_length - 1);
 
-                    final_ranges[final_ranges_count].range_start = current_start;
-                    final_ranges[final_ranges_count].range_end = current_end;
-                    final_ranges_count++;
-                    // Handle non-overlapping parts before the overlap
-                    if (overlap_start > current_start)
+                if (overlap_start <= overlap_end)
+                {
+                    // Add the mapped range to new_ranges
+                    ranges[next][new_count].start_range = overlap_start - src + dest;
+                    ranges[next][new_count].end_range = overlap_end - src + dest;
+                    new_count++;
+
+                    // If there's a part before the overlap, add it back to be processed
+                    if (r.start_range < overlap_start)
                     {
-                        new_list[new_seed_list_index].start_range = rag_start;
-                        new_list[new_seed_list_index].end_range = overlap_start;
-                        new_seed_list_index++;
+                        ranges[current][current_count].start_range = r.start_range;
+                        ranges[current][current_count].end_range = overlap_start - 1;
+                        current_count++;
                     }
 
-                    // Handle non-overlapping parts after the overlap
-                    if (current_end > overlap_end)
+                    // If there's a part after the overlap, add it back to be processed
+                    if (r.end_range > overlap_end)
                     {
-                        new_list[new_seed_list_index].start_range = overlap_end;
-                        new_list[new_seed_list_index].end_range = rag_end;
-                        new_seed_list_index++;
+                        ranges[current][current_count].start_range = overlap_end + 1;
+                        ranges[current][current_count].end_range = r.end_range;
+                        current_count++;
                     }
 
+                    mapped = true;
                     break;
                 }
             }
+
+            // If the range wasn't mapped, add it to new_ranges unchanged
+            if (!mapped)
+            {
+                ranges[next][new_count++] = r;
+            }
+        }
+
+        // Switch current array
+        current = next;
+        current_count = new_count;
+    }
+
+    // Find the minimum start value
+    uint64_t min_location = UINT64_MAX;
+    for (int i = 0; i < current_count; i++)
+    {
+        if (ranges[current][i].start_range < min_location)
+        {
+            min_location = ranges[current][i].start_range;
         }
     }
+
+    printf("Minimum location: %llu\n", min_location);
 }
 //Comparison function
 // Comparison function for qsort
@@ -383,7 +341,6 @@ int compare(const void *a, const void *b)
         return 1;
     return 0;
 }
-
 
 int main()
 {

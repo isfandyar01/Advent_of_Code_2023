@@ -32,7 +32,7 @@ for block in blocks:
             # print("a",a)
             if os < oe:
                 new.append((os - b + a, oe - b + a))
-                print(new)
+                # print(new)
                 if os > s:
                     seeds.append((s, os))
                     # print(seeds)
@@ -45,4 +45,4 @@ for block in blocks:
     seeds = new
 
 
-print((new))
+print(min(seeds)[0])

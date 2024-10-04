@@ -76,3 +76,62 @@ if overlap start is less than overlap end then it means that range is over lappi
 and i can transform that range according to mapping algo
 
 and if the range is not overlapping i.e overlap_start is greater than seed start and overlap_end is less than seed_end than that range is stored as it is in final_map and once done i can simple pick first index of final_map after sorting it out using qsort for minimum
+
+
+I was not able to solve it myself claude ai solved it before i Can 
+
+
+I understand your confusion. Let's break down the code and explain these concepts step by step:
+
+Switching of current array:
+
+The code uses two arrays to process the ranges efficiently. Let's explain why and how:
+Seed_Ranges ranges[2][MAX_SEEDS * MAX_MAPS];
+int current = 0; // Index to track which array is current
+
+We have two arrays (ranges[0] and ranges[1]) to avoid copying data back and forth.
+current keeps track of which array we're currently reading from.
+
+for (int map_index = 0; map_index < MAX_MAPS; map_index++)
+{
+    int next = 1 - current; // Index of the array to fill
+    // ... processing ...
+    current = next;
+}
+
+For each map, we read from ranges[current] and write to ranges[next].
+After processing all ranges for a map, we switch current to next.
+This swapping technique allows us to efficiently move between input and output without copying entire arrays.
+
+
+The mapped variable:
+
+bool mapped = false;
+// ... in the mapping loop ...
+if (overlap_start <= overlap_end)
+{
+    // ... process overlap ...
+    mapped = true;
+    break;
+}
+
+mapped keeps track of whether a range has been transformed by any mapping in the current map.
+If a range overlaps with a mapping, we set mapped = true and break the inner loop.
+After the inner loop:
+
+if (!mapped)
+{
+    ranges[next][new_count++] = r;
+}
+
+If mapped is still false, it means the range wasn't transformed by any mapping in this map.
+In this case, we copy the range unchanged to the next array.
+
+This approach ensures that:
+
+Ranges that overlap with mappings are transformed.
+Ranges that don't overlap with any mapping are passed through unchanged.
+Ranges are split when they partially overlap with a mapping.
+
+The switching of arrays and the mapped flag work together to efficiently process all ranges through all maps, handling transformations and splits as needed.
+Does this explanation help clarify these aspects of the code? Let me know if you'd like me to elaborate on any part further.
