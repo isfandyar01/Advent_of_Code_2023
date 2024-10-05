@@ -9,10 +9,10 @@
 
 #define FILENANME "input.txt"
 
-#define MAX_SEEDS 4
+#define MAX_SEEDS 20
 #define INITIAL_NUM_RANGES 20
 #define MAX_MAPS 7
-
+#define MAX_STACK_SIZE 200
 
 #define MIN_UINT64(a, b) ((a) < (b) ? (a) : (b))
 #define MAX_UINT64(a, b) ((a) > (b) ? (a) : (b))
@@ -61,10 +61,22 @@ map_list all_maps[MAX_MAPS];
 Seed_Ranges final_ranges[MAX_SEEDS * MAX_MAPS]; // Array to store final ranges
 
 
+typedef struct
+{
+    Seed_Ranges data[MAX_STACK_SIZE];
+    int top;
+} lifo;
+
+
 int new_seed_list_index = 0;
 int final_ranges_count = 0;
 int map_entry_index = 0;
 
+
+void init_lifo(lifo *obj);
+bool is_lifo_empty(lifo *obj);
+bool push_lifo(lifo *obj, Seed_Ranges range);
+Seed_Ranges pop_lifo(lifo *obj);
 
 char *read_from_file()
 {
@@ -244,30 +256,31 @@ void process_maps()
 
 void process_ranges()
 {
+    lifo current, new;
+
+    init_lifo(&current);
+    init_lifo(&new);
+
     int current_count = 0;
     int new_count = 0;
     Seed_Ranges ranges[2][MAX_SEEDS * MAX_MAPS];
-    int current = 0; // Index to track which array is current
+
 
     // Initialize first array with seed ranges
     for (int i = 0; i < MAX_SEEDS; i += 2)
     {
-        ranges[0][current_count].start_range = seed[i];
-        ranges[0][current_count].end_range = seed[i] + seed[i + 1] - 1;
-        current_count++;
+        Seed_Ranges r = {seed[i], seed[i] + seed[i + 1] - 1};
+        push_lifo(&current, r);
     }
 
     // Process each map
     for (int map_index = 0; map_index < MAX_MAPS; map_index++)
     {
-        int next = 1 - current; // Index of the array to fill
-        new_count = 0;
-
-        // Process each range
-        for (int i = 0; i < current_count; i++)
+        while (!is_lifo_empty(&current))
         {
-            Seed_Ranges r = ranges[current][i];
+            Seed_Ranges r = pop_lifo(&current);
             bool mapped = false;
+
 
             // Check against each mapping in the current map
             for (int j = 0; j < all_maps[map_index].number_of_entries; j++)
@@ -281,27 +294,23 @@ void process_ranges()
 
                 if (overlap_start <= overlap_end)
                 {
-                    // Add the mapped range to new_ranges
-                    ranges[next][new_count].start_range = overlap_start - src + dest;
-                    ranges[next][new_count].end_range = overlap_end - src + dest;
-                    new_count++;
+                    Seed_Ranges map_range = {overlap_start - src + dest, overlap_end - src + dest
 
+                    };
+                    push_lifo(&new, map_range);
                     // If there's a part before the overlap, add it back to be processed
                     if (r.start_range < overlap_start)
                     {
-                        ranges[current][current_count].start_range = r.start_range;
-                        ranges[current][current_count].end_range = overlap_start - 1;
-                        current_count++;
+                        Seed_Ranges before = {r.start_range, overlap_start - 1};
+                        push_lifo(&current, before);
                     }
 
                     // If there's a part after the overlap, add it back to be processed
                     if (r.end_range > overlap_end)
                     {
-                        ranges[current][current_count].start_range = overlap_end + 1;
-                        ranges[current][current_count].end_range = r.end_range;
-                        current_count++;
+                        Seed_Ranges after = {overlap_end + 1, r.end_range};
+                        push_lifo(&current, after);
                     }
-
                     mapped = true;
                     break;
                 }
@@ -310,22 +319,25 @@ void process_ranges()
             // If the range wasn't mapped, add it to new_ranges unchanged
             if (!mapped)
             {
-                ranges[next][new_count++] = r;
+                push_lifo(&new, r);
             }
         }
 
-        // Switch current array
-        current = next;
-        current_count = new_count;
+        // Swap stacks
+        lifo temp = current;
+        current = new;
+        new = temp;
+        init_lifo(&new); // Clear the new stack for the next iteration
     }
 
     // Find the minimum start value
     uint64_t min_location = UINT64_MAX;
-    for (int i = 0; i < current_count; i++)
+    while (!is_lifo_empty(&current))
     {
-        if (ranges[current][i].start_range < min_location)
+        Seed_Ranges r = pop_lifo(&current);
+        if (r.start_range < min_location)
         {
-            min_location = ranges[current][i].start_range;
+            min_location = r.start_range;
         }
     }
 
@@ -355,4 +367,45 @@ int main()
 
 
     return 0;
+}
+
+
+void init_lifo(lifo *obj)
+{
+    obj->top = -1;
+}
+bool is_lifo_empty(lifo *obj)
+{
+    if (obj->top == -1)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool is_lifo_full(lifo *obj)
+{
+    if (obj->top == MAX_STACK_SIZE - 1)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool push_lifo(lifo *obj, Seed_Ranges range)
+{
+    if (is_lifo_full(obj))
+    {
+        return false;
+    }
+    obj->data[++(obj->top)] = range;
+    return true;
+}
+Seed_Ranges pop_lifo(lifo *obj)
+{
+    if (is_lifo_empty(obj))
+    {
+        fprintf(stderr, "Stack underflow\n");
+    }
+    return obj->data[obj->top--];
 }

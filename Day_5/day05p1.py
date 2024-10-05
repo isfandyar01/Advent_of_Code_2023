@@ -21,8 +21,9 @@ for block in blocks:
     new = []
     while len(seeds) > 0:
         s, e = seeds.pop()
-        # print(s)
-        # print(e)
+        print(s)
+        print(e)
+        break
         for a, b, c in ranges:
             os = max(s, b)
             oe = min(e, b + c)
@@ -45,4 +46,4 @@ for block in blocks:
     seeds = new
 
 
-print(min(seeds)[0])
+# print(min(seeds)[0])
